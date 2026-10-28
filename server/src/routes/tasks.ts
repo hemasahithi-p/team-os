@@ -52,5 +52,46 @@ router.post("/", requireMember("admin", "member"), async (req: WsRequest, res) =
     );
     res.status(201).json(result.rows[0]);
 });
+const listSchema = z.object({
+    projectId: z.coerce.number().int().optional(),
+    status: z.enum(["todo", "in_progress", "blocked", "done"]).optional(),
+    assigneeId: z.coerce.number().int().optional(),
+});
 
+// list tasks with optional filters (any member, including viewers)
+router.get("/", requireMember(), async (req: WsRequest, res) => {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid filter" });
+    }
+    const { projectId, status, assigneeId } = parsed.data;
+
+    // always start with the workspace filter
+    const conditions = ["t.workspace_id = $1"];
+    const params: any[] = [req.workspaceId];
+
+    if (projectId !== undefined) {
+        params.push(projectId);
+        conditions.push(`t.project_id = $${params.length}`);
+    }
+    if (status !== undefined) {
+        params.push(status);
+        conditions.push(`t.status = $${params.length}`);
+    }
+    if (assigneeId !== undefined) {
+        params.push(assigneeId);
+        conditions.push(`t.assignee_id = $${params.length}`);
+    }
+
+    const result = await db.query(
+        `SELECT t.id, t.project_id, t.title, t.description, t.status,
+            t.assignee_id, u.name AS assignee_name, t.due_date, t.created_at
+     FROM tasks t
+     LEFT JOIN users u ON u.id = t.assignee_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY t.id`,
+        params
+    );
+    res.json(result.rows);
+});
 export default router;

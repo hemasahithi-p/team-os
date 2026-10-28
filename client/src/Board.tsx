@@ -40,6 +40,10 @@ export default function Board({
     const [assigneeId, setAssigneeId] = useState("");
     const [dueDate, setDueDate] = useState("");
 
+    // drag state
+    const [dragId, setDragId] = useState<number | null>(null);
+    const [overCol, setOverCol] = useState<Task["status"] | null>(null);
+
     async function loadTasks() {
         try {
             const list = await api<Task[]>(`/workspaces/${workspaceId}/tasks?projectId=${projectId}`);
@@ -50,13 +54,11 @@ export default function Board({
         }
     }
 
-    // reload tasks when workspace or project changes
     useEffect(() => {
         setTasks([]);
         loadTasks();
     }, [workspaceId, projectId]);
 
-    // load members for the assignee dropdown
     useEffect(() => {
         api<Member[]>(`/workspaces/${workspaceId}/members`)
             .then(setMembers)
@@ -79,8 +81,29 @@ export default function Board({
             setTitle("");
             setAssigneeId("");
             setDueDate("");
-            await loadTasks(); // refresh so the new card shows the assignee name
+            await loadTasks();
         } catch (err: any) {
+            setError(err.message);
+        }
+    }
+
+    // move a task to another column: update screen first, then the server
+    async function moveTask(taskId: number, newStatus: Task["status"]) {
+        const task = tasks.find((t) => t.id === taskId);
+        if (!task || task.status === newStatus) return;
+
+        const oldStatus = task.status;
+        setTasks((list) => list.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
+
+        try {
+            await api(`/workspaces/${workspaceId}/tasks/${taskId}`, {
+                method: "PATCH",
+                body: { status: newStatus },
+            });
+            setError("");
+        } catch (err: any) {
+            // server said no: put the card back
+            setTasks((list) => list.map((t) => (t.id === taskId ? { ...t, status: oldStatus } : t)));
             setError(err.message);
         }
     }
@@ -118,7 +141,28 @@ export default function Board({
                 {COLUMNS.map((col) => {
                     const items = tasks.filter((t) => t.status === col.key);
                     return (
-                        <div key={col.key} style={{ background: "#eceef2", borderRadius: 10, padding: 12, minHeight: 300 }}>
+                        <div
+                            key={col.key}
+                            onDragOver={(e) => {
+                                if (!canEdit) return;
+                                e.preventDefault(); // required, otherwise drop is not allowed
+                                setOverCol(col.key);
+                            }}
+                            onDragLeave={() => setOverCol(null)}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                setOverCol(null);
+                                if (canEdit && dragId !== null) moveTask(dragId, col.key);
+                                setDragId(null);
+                            }}
+                            style={{
+                                background: overCol === col.key ? "#dbe4f5" : "#eceef2",
+                                borderRadius: 10,
+                                padding: 12,
+                                minHeight: 300,
+                                transition: "background 0.15s",
+                            }}
+                        >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                                 <span style={{ width: 10, height: 10, borderRadius: "50%", background: col.color }} />
                                 <strong style={{ fontSize: 14 }}>{col.label}</strong>
@@ -128,12 +172,23 @@ export default function Board({
                             {items.map((t) => (
                                 <div
                                     key={t.id}
+                                    draggable={canEdit}
+                                    onDragStart={(e) => {
+                                        setDragId(t.id);
+                                        e.dataTransfer.setData("text/plain", String(t.id)); // needed for Firefox
+                                    }}
+                                    onDragEnd={() => {
+                                        setDragId(null);
+                                        setOverCol(null);
+                                    }}
                                     style={{
                                         background: "#fff",
                                         borderRadius: 8,
                                         padding: 12,
                                         marginBottom: 10,
                                         boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                                        cursor: canEdit ? "grab" : "default",
+                                        opacity: dragId === t.id ? 0.4 : 1,
                                     }}
                                 >
                                     <div style={{ fontWeight: 600, marginBottom: 6 }}>{t.title}</div>

@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { db } from "../db";
+import { requireAuth, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -70,5 +71,12 @@ router.post("/login", async (req, res) => {
         console.error(e);
         res.status(500).json({ error: "Server error" });
     }
+});
+router.get("/me", requireAuth, async (req: AuthRequest, res) => {
+    const result = await db.query(
+        "SELECT id, name, email FROM users WHERE id = $1",
+        [req.userId]
+    );
+    res.json(result.rows[0]);
 });
 export default router;

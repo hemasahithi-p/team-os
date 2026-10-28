@@ -5,6 +5,7 @@ import Board from "./Board";
 import { initials, avatarColor } from "./ui";
 import { connectWorkspace, disconnect } from "./realtime";
 import Bell from "./Bell";
+import Calendar from "./Calendar";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -18,6 +19,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     const [newWs, setNewWs] = useState("");
     const [newProject, setNewProject] = useState("");
     const [error, setError] = useState("");
+    const [view, setView] = useState<"board" | "calendar">("board");
 
     const workspace = workspaces.find((w) => w.id === wsId);
     const project = projects.find((p) => p.id === projectId);
@@ -153,14 +155,39 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                 <main className="main">
                     {error && <div className="error">{error}</div>}
                     {!workspace && <div className="empty-state">Create a workspace to get started.</div>}
-                    {workspace && !project && <div className="empty-state">Create a project to get started.</div>}
-                    {workspace && project && (
+
+                    {workspace && (
+                        <div className="tabs">
+                            <button className={"tab" + (view === "board" ? " active" : "")} onClick={() => setView("board")}>
+                                Board
+                            </button>
+                            <button className={"tab" + (view === "calendar" ? " active" : "")} onClick={() => setView("calendar")}>
+                                Calendar
+                            </button>
+                        </div>
+                    )}
+
+                    {workspace && view === "board" && !project && (
+                        <div className="empty-state">Create a project to get started.</div>
+                    )}
+
+                    {workspace && view === "board" && project && (
                         <>
                             <div className="page-head">
                                 <h1>{project.name}</h1>
                                 <span className="chip">{workspace.role}</span>
                             </div>
                             <Board workspaceId={workspace.id} projectId={project.id} canEdit={canEdit} />
+                        </>
+                    )}
+
+                    {workspace && view === "calendar" && (
+                        <>
+                            <div className="page-head">
+                                <h1>{workspace.name} calendar</h1>
+                                <span className="chip">{workspace.role}</span>
+                            </div>
+                            <Calendar workspaceId={workspace.id} canEdit={canEdit} />
                         </>
                     )}
                 </main>

@@ -717,3 +717,137 @@ select {
   font-size: 12px;
   margin-top: 2px;
 }
+
+/* ---------- tabs ---------- */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.tab {
+  border: none;
+  background: none;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--purple-dark);
+  font-weight: 600;
+  border-bottom-color: var(--purple);
+}
+
+/* ---------- calendar ---------- */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cal-title {
+  margin: 0 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--border);
+  gap: 1px;
+  overflow: hidden;
+}
+
+.cal-dow {
+  background: #f0f0f0;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+
+.cal-cell {
+  background: #fff;
+  min-height: 112px;
+  padding: 6px;
+}
+
+.cal-cell.outside {
+  background: #fafafa;
+}
+
+.cal-cell.outside .cal-day {
+  color: #b0b0b0;
+}
+
+.cal-cell.today .cal-day {
+  background: var(--purple);
+  color: #fff;
+}
+
+.cal-day {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: var(--muted);
+}
+
+.cal-chip {
+  font-size: 12px;
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  background: #f3f3f8;
+  border-left: 3px solid #888;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.cal-chip:hover {
+  background: var(--purple-light);
+}
+
+.cal-chip.overdue {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+.cal-chip.done {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.unscheduled {
+  margin-top: 20px;
+}
+
+.unscheduled-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.unscheduled-list .cal-chip {
+  max-width: 260px;
+  margin: 0;
+}

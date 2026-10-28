@@ -3,9 +3,10 @@ import type { FormEvent } from "react";
 import { api } from "./api";
 import Board from "./Board";
 import { initials, avatarColor } from "./ui";
-import { connectWorkspace, disconnect } from "./realtime";
+import { connectWorkspace, disconnect, onRealtime } from "./realtime";
 import Bell from "./Bell";
 import Calendar from "./Calendar";
+import Members from "./Members";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -19,7 +20,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     const [newWs, setNewWs] = useState("");
     const [newProject, setNewProject] = useState("");
     const [error, setError] = useState("");
-    const [view, setView] = useState<"board" | "calendar">("board");
+    const [view, setView] = useState<"board" | "calendar" | "members">("board");
 
     const workspace = workspaces.find((w) => w.id === wsId);
     const project = projects.find((p) => p.id === projectId);
@@ -50,6 +51,12 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     useEffect(() => {
         if (wsId !== null) connectWorkspace(wsId);
     }, [wsId]);
+    // if an admin removes me from the workspace I am viewing, reload
+    useEffect(() => {
+        return onRealtime((ev) => {
+            if (ev.type === "removed") window.location.reload();
+        });
+    }, []);
 
     // close it when leaving (logout)
     useEffect(() => () => disconnect(), []);
@@ -164,6 +171,9 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                             <button className={"tab" + (view === "calendar" ? " active" : "")} onClick={() => setView("calendar")}>
                                 Calendar
                             </button>
+                            <button className={"tab" + (view === "members" ? " active" : "")} onClick={() => setView("members")}>
+                                Members
+                            </button>
                         </div>
                     )}
 
@@ -187,7 +197,26 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                                 <h1>{workspace.name} calendar</h1>
                                 <span className="chip">{workspace.role}</span>
                             </div>
-                            <Calendar workspaceId={workspace.id} canEdit={canEdit} />
+                            <Calendar
+                                workspaceId={workspace.id}
+                                canEdit={canEdit}
+                                userId={user.id}
+                                isAdmin={workspace.role === "admin"}
+                            />
+                        </>
+                    )}
+
+                    {workspace && view === "members" && (
+                        <>
+                            <div className="page-head">
+                                <h1>{workspace.name} members</h1>
+                                <span className="chip">{workspace.role}</span>
+                            </div>
+                            <Members
+                                workspaceId={workspace.id}
+                                currentUserId={user.id}
+                                isAdmin={workspace.role === "admin"}
+                            />
                         </>
                     )}
                 </main>

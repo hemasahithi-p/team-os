@@ -64,17 +64,25 @@ export default function Board({
         loadTasks();
     }, [workspaceId, projectId]);
 
-    useEffect(() => {
+    function loadMembers() {
         api<Member[]>(`/workspaces/${workspaceId}/members`)
             .then(setMembers)
             .catch((e) => setError(e.message));
+    }
+
+    useEffect(() => {
+        loadMembers();
     }, [workspaceId]);
 
     // live updates from teammates
     useEffect(() => {
         return onRealtime((ev) => {
-            if (ev.type === "subscribed") loadTasks(); // first connect or reconnect: catch up
-            if (ev.type === "tasks.changed" && ev.projectId === projectId) loadTasks();
+            if (ev.type === "subscribed") loadTasks();
+            if (ev.type === "tasks.changed" && (ev.projectId === projectId || ev.projectId == null)) loadTasks();
+            if (ev.type === "members.changed") {
+                loadMembers();
+                loadTasks();
+            }
         });
     }, [workspaceId, projectId]);
 

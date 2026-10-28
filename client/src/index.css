@@ -851,3 +851,40 @@ select {
   max-width: 260px;
   margin: 0;
 }
+
+/* ---------- members ---------- */
+.members {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.member-row:last-child {
+  border-bottom: none;
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-email {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- events on calendar ---------- */
+.cal-chip.event {
+  background: var(--purple-light);
+  border-left-color: var(--purple);
+  color: var(--purple-dark);
+  font-weight: 600;
+}

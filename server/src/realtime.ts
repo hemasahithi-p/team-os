@@ -77,3 +77,11 @@ export function sendToUser(
         if (userBySocket.get(s) === userId && s.readyState === WebSocket.OPEN) s.send(message);
     });
 }
+// remove a user's live connections from a workspace (used when they are removed)
+export function kickUser(workspaceId: number, userId: number) {
+    const room = rooms.get(workspaceId);
+    if (!room) return;
+    room.forEach((s) => {
+        if (userBySocket.get(s) === userId) room.delete(s);
+    });
+}

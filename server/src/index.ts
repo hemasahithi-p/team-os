@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { db } from "./db";
 import authRoutes from "./routes/auth";
+import workspaceRoutes from "./routes/workspaces";
 
 const app = express();
 app.use(cors());
@@ -13,5 +14,6 @@ app.get("/health", async (_req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/workspaces", workspaceRoutes);
 
 app.listen(process.env.PORT, () => console.log("API on", process.env.PORT));

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { requireMember, WsRequest } from "../middleware/workspace";
+import { broadcast } from "../realtime";
 
 // mergeParams lets this file see :workspaceId and :taskId from the path
 const router = Router({ mergeParams: true });
@@ -61,6 +62,12 @@ router.post("/", requireMember("admin", "member"), async (req: WsRequest, res) =
      FROM new_comment n JOIN users u ON u.id = n.user_id`,
         [req.workspaceId, taskId, req.userId, parsed.data.body]
     );
+    broadcast(req.workspaceId!, {
+        type: "comment.created",
+        taskId,
+        comment: result.rows[0],
+        actorId: req.userId,
+    });
     res.status(201).json(result.rows[0]);
 });
 

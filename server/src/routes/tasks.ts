@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { requireMember, WsRequest } from "../middleware/workspace";
+import { broadcast } from "../realtime";
 
 const router = Router({ mergeParams: true });
 
@@ -50,6 +51,7 @@ router.post("/", requireMember("admin", "member"), async (req: WsRequest, res) =
      RETURNING id, project_id, title, description, status, assignee_id, due_date, created_at`,
         [req.workspaceId, projectId, title, description ?? null, assigneeId ?? null, dueDate ?? null]
     );
+    broadcast(req.workspaceId!, { type: "tasks.changed", projectId, actorId: req.userId });
     res.status(201).json(result.rows[0]);
 });
 const listSchema = z.object({
@@ -169,6 +171,11 @@ router.patch("/:taskId", requireMember("admin", "member"), async (req: WsRequest
      VALUES ($1, 'human', $2, 'task.update', $3)`,
         [req.workspaceId, req.userId, JSON.stringify({ taskId, changes })]
     );
+    broadcast(req.workspaceId!, {
+        type: "tasks.changed",
+        projectId: result.rows[0].project_id,
+        actorId: req.userId,
+    });
 
     res.json(result.rows[0]);
 });

@@ -6,6 +6,8 @@ import workspaceRoutes from "./routes/workspaces";
 import projectRoutes from "./routes/projects";
 import taskRoutes from "./routes/tasks";
 import commentRoutes from "./routes/comments";
+import http from "http";
+import { initRealtime } from "./realtime";
 
 const app = express();
 app.use(cors());
@@ -22,4 +24,6 @@ app.use("/workspaces/:workspaceId/projects", projectRoutes);
 app.use("/workspaces/:workspaceId/tasks", taskRoutes);
 app.use("/workspaces/:workspaceId/tasks/:taskId/comments", commentRoutes);
 
-app.listen(process.env.PORT, () => console.log("API on", process.env.PORT));
+const server = http.createServer(app);
+initRealtime(server);
+server.listen(process.env.PORT, () => console.log("API on", process.env.PORT));

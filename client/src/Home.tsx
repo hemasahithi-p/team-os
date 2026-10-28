@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
+import Board from "./Board";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -157,7 +158,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                 {workspace && project && (
                     <>
                         <h1 style={{ marginTop: 0 }}>{project.name}</h1>
-                        <p style={{ color: "#666" }}>Board comes in the next part.</p>
+                        <Board workspaceId={workspace.id} projectId={project.id} />
                     </>
                 )}
             </main>

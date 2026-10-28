@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
 import { initials, avatarColor, today } from "./ui";
+import TaskPanel from "./TaskPanel";
 
 export type Task = {
     id: number;
@@ -43,6 +44,9 @@ export default function Board({
     const [dragId, setDragId] = useState<number | null>(null);
     const [overCol, setOverCol] = useState<Task["status"] | null>(null);
 
+    const [openId, setOpenId] = useState<number | null>(null);
+    const openTask = tasks.find((t) => t.id === openId);
+
     async function loadTasks() {
         try {
             const list = await api<Task[]>(`/workspaces/${workspaceId}/tasks?projectId=${projectId}`);
@@ -55,6 +59,7 @@ export default function Board({
 
     useEffect(() => {
         setTasks([]);
+        setOpenId(null);
         loadTasks();
     }, [workspaceId, projectId]);
 
@@ -166,6 +171,7 @@ export default function Board({
                                         className={
                                             "card" + (canEdit ? " draggable" : "") + (dragId === t.id ? " dragging" : "")
                                         }
+                                        onClick={() => setOpenId(t.id)}
                                         draggable={canEdit}
                                         onDragStart={(e) => {
                                             setDragId(t.id);
@@ -203,6 +209,14 @@ export default function Board({
                     );
                 })}
             </div>
+            {openTask && (
+                <TaskPanel
+                    workspaceId={workspaceId}
+                    task={openTask}
+                    canEdit={canEdit}
+                    onClose={() => setOpenId(null)}
+                />
+            )}
         </div>
     );
 }

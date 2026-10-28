@@ -4,6 +4,7 @@ import { db } from "./db";
 import authRoutes from "./routes/auth";
 import workspaceRoutes from "./routes/workspaces";
 import projectRoutes from "./routes/projects";
+import taskRoutes from "./routes/tasks";
 
 const app = express();
 app.use(cors());
@@ -17,5 +18,6 @@ app.get("/health", async (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/workspaces", workspaceRoutes);
 app.use("/workspaces/:workspaceId/projects", projectRoutes);
+app.use("/workspaces/:workspaceId/tasks", taskRoutes);
 
 app.listen(process.env.PORT, () => console.log("API on", process.env.PORT));

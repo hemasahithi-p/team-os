@@ -621,3 +621,99 @@ select {
 .card.draggable {
   cursor: grab;
 }
+
+/* ---------- notifications ---------- */
+.bell-wrap {
+  position: relative;
+}
+
+.bell-btn {
+  position: relative;
+  color: #fff;
+  font-size: 17px;
+}
+
+.bell-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+.bell-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.bell-menu {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 340px;
+  z-index: 21;
+  background: #fff;
+  color: var(--text);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.bell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--purple-dark);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.bell-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notice {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+
+.notice:hover {
+  background: #f7f7f7;
+}
+
+.notice.unread {
+  background: var(--purple-light);
+  border-left: 3px solid var(--purple);
+}
+
+.notice-time {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}

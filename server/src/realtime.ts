@@ -5,12 +5,13 @@ import { db } from "./db";
 
 // workspaceId -> sockets currently listening to that workspace
 const rooms = new Map<number, Set<WebSocket>>();
+// socket -> the user who owns it
+const userBySocket = new WeakMap<WebSocket, number>();
 
 export function initRealtime(server: Server) {
     const wss = new WebSocketServer({ server, path: "/ws" });
 
     wss.on("connection", (socket, req) => {
-        // 1. who is connecting? the token comes in the URL: /ws?token=...
         const url = new URL(req.url ?? "", "http://localhost");
         let userId: number;
         try {
@@ -23,10 +24,10 @@ export function initRealtime(server: Server) {
             socket.close(4001, "Unauthorized");
             return;
         }
+        userBySocket.set(socket, userId);
 
         const joined = new Set<number>();
 
-        // 2. the client asks to join a workspace room
         socket.on("message", async (raw) => {
             let msg: any;
             try {
@@ -36,7 +37,6 @@ export function initRealtime(server: Server) {
             }
 
             if (msg.type === "subscribe" && Number.isInteger(msg.workspaceId)) {
-                // only members may join
                 const m = await db.query(
                     "SELECT 1 FROM memberships WHERE workspace_id = $1 AND user_id = $2",
                     [msg.workspaceId, userId]
@@ -52,7 +52,6 @@ export function initRealtime(server: Server) {
             }
         });
 
-        // 3. clean up when the tab closes
         socket.on("close", () => {
             joined.forEach((id) => rooms.get(id)?.delete(socket));
         });
@@ -64,5 +63,17 @@ export function broadcast(workspaceId: number, event: { type: string;[key: strin
     const message = JSON.stringify(event);
     rooms.get(workspaceId)?.forEach((s) => {
         if (s.readyState === WebSocket.OPEN) s.send(message);
+    });
+}
+
+// tell ONE user (in one workspace) that something happened
+export function sendToUser(
+    workspaceId: number,
+    userId: number,
+    event: { type: string;[key: string]: unknown }
+) {
+    const message = JSON.stringify(event);
+    rooms.get(workspaceId)?.forEach((s) => {
+        if (userBySocket.get(s) === userId && s.readyState === WebSocket.OPEN) s.send(message);
     });
 }

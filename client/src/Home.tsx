@@ -4,6 +4,7 @@ import { api } from "./api";
 import Board from "./Board";
 import { initials, avatarColor } from "./ui";
 import { connectWorkspace, disconnect } from "./realtime";
+import Bell from "./Bell";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -94,6 +95,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                 </div>
                 <input className="search" placeholder="Search (AI search coming soon)" disabled />
                 <div className="topbar-right">
+                    <Bell workspaceId={wsId} />
                     <span className="user-name">{user.name}</span>
                     <div className="avatar" style={{ background: avatarColor(user.name) }}>
                         {initials(user.name)}

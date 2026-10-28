@@ -4,6 +4,7 @@ import { db } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { requireMember, WsRequest } from "../middleware/workspace";
 import { broadcast } from "../realtime";
+import { notify } from "../notify";
 
 // mergeParams lets this file see :workspaceId and :taskId from the path
 const router = Router({ mergeParams: true });
@@ -62,6 +63,26 @@ router.post("/", requireMember("admin", "member"), async (req: WsRequest, res) =
      FROM new_comment n JOIN users u ON u.id = n.user_id`,
         [req.workspaceId, taskId, req.userId, parsed.data.body]
     );
+    // notify the assignee and everyone who already commented (except the author)
+    const info = await db.query("SELECT title FROM tasks WHERE id = $1", [taskId]);
+    const recipients = await db.query(
+        `SELECT uid FROM (
+       SELECT assignee_id AS uid FROM tasks WHERE id = $1
+       UNION
+       SELECT user_id FROM comments WHERE task_id = $1
+     ) x
+     WHERE uid IS NOT NULL AND uid <> $2`,
+        [taskId, req.userId]
+    );
+    for (const r of recipients.rows) {
+        await notify(
+            req.workspaceId!,
+            r.uid,
+            "comment.created",
+            `${result.rows[0].user_name} commented on "${info.rows[0].title}"`,
+            taskId
+        );
+    }
     broadcast(req.workspaceId!, {
         type: "comment.created",
         taskId,

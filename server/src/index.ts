@@ -8,6 +8,7 @@ import taskRoutes from "./routes/tasks";
 import commentRoutes from "./routes/comments";
 import http from "http";
 import { initRealtime } from "./realtime";
+import notificationRoutes from "./routes/notifications";
 
 const app = express();
 app.use(cors());
@@ -23,6 +24,7 @@ app.use("/workspaces", workspaceRoutes);
 app.use("/workspaces/:workspaceId/projects", projectRoutes);
 app.use("/workspaces/:workspaceId/tasks", taskRoutes);
 app.use("/workspaces/:workspaceId/tasks/:taskId/comments", commentRoutes);
+app.use("/workspaces/:workspaceId/notifications", notificationRoutes);
 
 const server = http.createServer(app);
 initRealtime(server);

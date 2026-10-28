@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
+import { initials, avatarColor, today } from "./ui";
 
 export type Task = {
     id: number;
@@ -16,10 +17,10 @@ export type Task = {
 type Member = { id: number; name: string; email: string; role: string };
 
 const COLUMNS: { key: Task["status"]; label: string; color: string }[] = [
-    { key: "todo", label: "To do", color: "#64748b" },
-    { key: "in_progress", label: "In progress", color: "#2563eb" },
-    { key: "blocked", label: "Blocked", color: "#dc2626" },
-    { key: "done", label: "Done", color: "#16a34a" },
+    { key: "todo", label: "To do", color: "#8a8a8a" },
+    { key: "in_progress", label: "In progress", color: "#0f6cbd" },
+    { key: "blocked", label: "Blocked", color: "#c4314b" },
+    { key: "done", label: "Done", color: "#237b4b" },
 ];
 
 export default function Board({
@@ -35,12 +36,10 @@ export default function Board({
     const [members, setMembers] = useState<Member[]>([]);
     const [error, setError] = useState("");
 
-    // form fields
     const [title, setTitle] = useState("");
     const [assigneeId, setAssigneeId] = useState("");
     const [dueDate, setDueDate] = useState("");
 
-    // drag state
     const [dragId, setDragId] = useState<number | null>(null);
     const [overCol, setOverCol] = useState<Task["status"] | null>(null);
 
@@ -87,7 +86,6 @@ export default function Board({
         }
     }
 
-    // move a task to another column: update screen first, then the server
     async function moveTask(taskId: number, newStatus: Task["status"]) {
         const task = tasks.find((t) => t.id === taskId);
         if (!task || task.status === newStatus) return;
@@ -102,25 +100,24 @@ export default function Board({
             });
             setError("");
         } catch (err: any) {
-            // server said no: put the card back
             setTasks((list) => list.map((t) => (t.id === taskId ? { ...t, status: oldStatus } : t)));
             setError(err.message);
         }
     }
 
-    const box = { padding: 8, border: "1px solid #ccc", borderRadius: 6, fontSize: 14 };
+    const todayStr = today();
 
     return (
         <div>
             {canEdit && (
-                <form onSubmit={addTask} style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                <form className="task-form" onSubmit={addTask}>
                     <input
-                        style={{ ...box, flex: 1, minWidth: 200 }}
-                        placeholder="New task title"
+                        className="input title-input"
+                        placeholder="Add a new task..."
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
-                    <select style={box} value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+                    <select className="input" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
                         <option value="">Unassigned</option>
                         {members.map((m) => (
                             <option key={m.id} value={m.id}>
@@ -128,24 +125,24 @@ export default function Board({
                             </option>
                         ))}
                     </select>
-                    <input style={box} type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                    <button type="submit" style={{ ...box, background: "#111", color: "#fff", cursor: "pointer" }}>
-                        Add task
-                    </button>
+                    <input className="input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                    <button type="submit" className="btn btn-primary">Add task</button>
                 </form>
             )}
 
-            {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
+            {error && <div className="error">{error}</div>}
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+            <div className="board">
                 {COLUMNS.map((col) => {
                     const items = tasks.filter((t) => t.status === col.key);
                     return (
                         <div
                             key={col.key}
+                            className={"column" + (overCol === col.key ? " over" : "")}
+                            style={{ ["--col" as any]: col.color }}
                             onDragOver={(e) => {
                                 if (!canEdit) return;
-                                e.preventDefault(); // required, otherwise drop is not allowed
+                                e.preventDefault();
                                 setOverCol(col.key);
                             }}
                             onDragLeave={() => setOverCol(null)}
@@ -155,53 +152,53 @@ export default function Board({
                                 if (canEdit && dragId !== null) moveTask(dragId, col.key);
                                 setDragId(null);
                             }}
-                            style={{
-                                background: overCol === col.key ? "#dbe4f5" : "#eceef2",
-                                borderRadius: 10,
-                                padding: 12,
-                                minHeight: 300,
-                                transition: "background 0.15s",
-                            }}
                         >
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                                <span style={{ width: 10, height: 10, borderRadius: "50%", background: col.color }} />
-                                <strong style={{ fontSize: 14 }}>{col.label}</strong>
-                                <span style={{ color: "#888", fontSize: 13 }}>{items.length}</span>
+                            <div className="col-head">
+                                <span className="col-title">{col.label}</span>
+                                <span className="col-count">{items.length}</span>
                             </div>
 
-                            {items.map((t) => (
-                                <div
-                                    key={t.id}
-                                    draggable={canEdit}
-                                    onDragStart={(e) => {
-                                        setDragId(t.id);
-                                        e.dataTransfer.setData("text/plain", String(t.id)); // needed for Firefox
-                                    }}
-                                    onDragEnd={() => {
-                                        setDragId(null);
-                                        setOverCol(null);
-                                    }}
-                                    style={{
-                                        background: "#fff",
-                                        borderRadius: 8,
-                                        padding: 12,
-                                        marginBottom: 10,
-                                        boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-                                        cursor: canEdit ? "grab" : "default",
-                                        opacity: dragId === t.id ? 0.4 : 1,
-                                    }}
-                                >
-                                    <div style={{ fontWeight: 600, marginBottom: 6 }}>{t.title}</div>
-                                    <div style={{ fontSize: 12, color: "#666" }}>
-                                        {t.assignee_name ? `👤 ${t.assignee_name}` : "Unassigned"}
+                            {items.map((t) => {
+                                const overdue = !!t.due_date && t.due_date < todayStr && t.status !== "done";
+                                return (
+                                    <div
+                                        key={t.id}
+                                        className={
+                                            "card" + (canEdit ? " draggable" : "") + (dragId === t.id ? " dragging" : "")
+                                        }
+                                        draggable={canEdit}
+                                        onDragStart={(e) => {
+                                            setDragId(t.id);
+                                            e.dataTransfer.setData("text/plain", String(t.id));
+                                        }}
+                                        onDragEnd={() => {
+                                            setDragId(null);
+                                            setOverCol(null);
+                                        }}
+                                    >
+                                        <div className="card-title">{t.title}</div>
+                                        <div className="card-foot">
+                                            <div className="assignee">
+                                                {t.assignee_name ? (
+                                                    <>
+                                                        <span className="avatar sm" style={{ background: avatarColor(t.assignee_name) }}>
+                                                            {initials(t.assignee_name)}
+                                                        </span>
+                                                        <span>{t.assignee_name}</span>
+                                                    </>
+                                                ) : (
+                                                    <span>Unassigned</span>
+                                                )}
+                                            </div>
+                                            {t.due_date && (
+                                                <span className={"due" + (overdue ? " overdue" : "")}>{t.due_date}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                    {t.due_date && (
-                                        <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>📅 {t.due_date}</div>
-                                    )}
-                                </div>
-                            ))}
+                                );
+                            })}
 
-                            {items.length === 0 && <div style={{ color: "#999", fontSize: 13 }}>No tasks</div>}
+                            {items.length === 0 && <div className="col-empty">No tasks</div>}
                         </div>
                     );
                 })}

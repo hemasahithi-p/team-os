@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "./api";
 import Board from "./Board";
+import { initials, avatarColor } from "./ui";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -20,7 +21,6 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     const project = projects.find((p) => p.id === projectId);
     const canEdit = workspace?.role === "admin" || workspace?.role === "member";
 
-    // load my workspaces once
     useEffect(() => {
         api<Workspace[]>("/workspaces")
             .then((list) => {
@@ -30,7 +30,6 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
             .catch((e) => setError(e.message));
     }, []);
 
-    // load projects whenever the selected workspace changes
     useEffect(() => {
         setProjects([]);
         setProjectId(null);
@@ -77,91 +76,84 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
         }
     }
 
-    const box = { padding: 8, border: "1px solid #ccc", borderRadius: 6, fontSize: 14 };
-    const label = { fontSize: 12, color: "#666", margin: "16px 0 6px", textTransform: "uppercase" as const };
-
     return (
-        <div style={{ display: "flex", minHeight: "100vh", fontFamily: "sans-serif" }}>
-            {/* sidebar */}
-            <aside style={{ width: 260, background: "#fff", borderRight: "1px solid #ddd", padding: 16 }}>
-                <h2 style={{ margin: 0 }}>Team OS</h2>
-                <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{user.name}</div>
-                <button onClick={onLogout} style={{ ...box, marginTop: 8, cursor: "pointer" }}>
-                    Log out
-                </button>
+        <div className="app">
+            <header className="topbar">
+                <div className="brand">
+                    <span className="brand-logo">T</span>
+                    Team OS
+                </div>
+                <input className="search" placeholder="Search (AI search coming soon)" disabled />
+                <div className="topbar-right">
+                    <span className="user-name">{user.name}</span>
+                    <div className="avatar" style={{ background: avatarColor(user.name) }}>
+                        {initials(user.name)}
+                    </div>
+                    <button className="btn-ghost" onClick={onLogout}>Sign out</button>
+                </div>
+            </header>
 
-                <div style={label}>Workspace</div>
-                {workspaces.length > 0 && (
-                    <select
-                        style={{ ...box, width: "100%" }}
-                        value={wsId ?? ""}
-                        onChange={(e) => setWsId(Number(e.target.value))}
-                    >
-                        {workspaces.map((w) => (
-                            <option key={w.id} value={w.id}>
-                                {w.name} ({w.role})
-                            </option>
-                        ))}
-                    </select>
-                )}
-                <form onSubmit={createWorkspace} style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    <input
-                        style={{ ...box, flex: 1, minWidth: 0 }}
-                        placeholder="New workspace"
-                        value={newWs}
-                        onChange={(e) => setNewWs(e.target.value)}
-                    />
-                    <button type="submit" style={{ ...box, cursor: "pointer" }}>+</button>
-                </form>
+            <div className="body">
+                <aside className="sidebar">
+                    <div className="side-label">Workspace</div>
+                    {workspaces.length > 0 && (
+                        <select
+                            className="input"
+                            style={{ width: "100%" }}
+                            value={wsId ?? ""}
+                            onChange={(e) => setWsId(Number(e.target.value))}
+                        >
+                            {workspaces.map((w) => (
+                                <option key={w.id} value={w.id}>
+                                    {w.name} ({w.role})
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    <form className="side-row" onSubmit={createWorkspace}>
+                        <input className="input" placeholder="New workspace" value={newWs} onChange={(e) => setNewWs(e.target.value)} />
+                        <button type="submit" className="btn">+</button>
+                    </form>
 
-                {workspace && (
-                    <>
-                        <div style={label}>Projects</div>
-                        {projects.map((p) => (
-                            <div
-                                key={p.id}
-                                onClick={() => setProjectId(p.id)}
-                                style={{
-                                    padding: "8px 10px",
-                                    borderRadius: 6,
-                                    cursor: "pointer",
-                                    marginBottom: 2,
-                                    background: p.id === projectId ? "#111" : "transparent",
-                                    color: p.id === projectId ? "#fff" : "#111",
-                                }}
-                            >
-                                {p.name}
+                    {workspace && (
+                        <>
+                            <div className="side-label">Projects</div>
+                            {projects.map((p) => (
+                                <div
+                                    key={p.id}
+                                    className={"project-item" + (p.id === projectId ? " active" : "")}
+                                    onClick={() => setProjectId(p.id)}
+                                >
+                                    {p.name}
+                                </div>
+                            ))}
+                            {projects.length === 0 && <div className="side-empty">No projects yet</div>}
+
+                            {canEdit && (
+                                <form className="side-row" onSubmit={createProject}>
+                                    <input className="input" placeholder="New project" value={newProject} onChange={(e) => setNewProject(e.target.value)} />
+                                    <button type="submit" className="btn">+</button>
+                                </form>
+                            )}
+                        </>
+                    )}
+                </aside>
+
+                <main className="main">
+                    {error && <div className="error">{error}</div>}
+                    {!workspace && <div className="empty-state">Create a workspace to get started.</div>}
+                    {workspace && !project && <div className="empty-state">Create a project to get started.</div>}
+                    {workspace && project && (
+                        <>
+                            <div className="page-head">
+                                <h1>{project.name}</h1>
+                                <span className="chip">{workspace.role}</span>
                             </div>
-                        ))}
-                        {projects.length === 0 && <div style={{ color: "#888", fontSize: 14 }}>No projects yet</div>}
-
-                        {canEdit && (
-                            <form onSubmit={createProject} style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                                <input
-                                    style={{ ...box, flex: 1, minWidth: 0 }}
-                                    placeholder="New project"
-                                    value={newProject}
-                                    onChange={(e) => setNewProject(e.target.value)}
-                                />
-                                <button type="submit" style={{ ...box, cursor: "pointer" }}>+</button>
-                            </form>
-                        )}
-                    </>
-                )}
-            </aside>
-
-            {/* main area */}
-            <main style={{ flex: 1, padding: 24 }}>
-                {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
-                {!workspace && <p>Create a workspace to get started.</p>}
-                {workspace && !project && <p>Create a project to get started.</p>}
-                {workspace && project && (
-                    <>
-                        <h1 style={{ marginTop: 0 }}>{project.name}</h1>
-                        <Board workspaceId={workspace.id} projectId={project.id} canEdit={canEdit} />
-                    </>
-                )}
-            </main>
+                            <Board workspaceId={workspace.id} projectId={project.id} canEdit={canEdit} />
+                        </>
+                    )}
+                </main>
+            </div>
         </div>
     );
 }

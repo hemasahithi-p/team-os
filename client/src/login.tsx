@@ -27,39 +27,40 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
         }
     }
 
-    const input = { padding: 10, border: "1px solid #ccc", borderRadius: 6, fontSize: 15 };
-
     return (
-        <div style={{ maxWidth: 340, margin: "80px auto", fontFamily: "sans-serif" }}>
-            <h1>Team OS</h1>
-            <p style={{ color: "#666" }}>
-                {mode === "login" ? "Log in to your workspace" : "Create your account"}
-            </p>
+        <div className="login-wrap">
+            <div className="login-card">
+                <div className="brand-logo" style={{ color: "#fff" }}>T</div>
+                <h1>Team OS</h1>
+                <p className="login-sub">
+                    {mode === "login" ? "Sign in to your workspace" : "Create your account"}
+                </p>
 
-            <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {mode === "signup" && (
-                    <input style={input} placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-                )}
-                <input style={input} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <input style={input} type="password" placeholder="Password (min 6)" value={password} onChange={(e) => setPassword(e.target.value)} />
-                {error && <div style={{ color: "crimson" }}>{error}</div>}
-                <button type="submit" style={{ ...input, background: "#111", color: "#fff", cursor: "pointer" }}>
-                    {mode === "login" ? "Log in" : "Sign up"}
-                </button>
-            </form>
+                <form onSubmit={submit}>
+                    {mode === "signup" && (
+                        <input className="input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+                    )}
+                    <input className="input" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input className="input" type="password" placeholder="Password (min 6)" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    {error && <div className="error" style={{ margin: 0 }}>{error}</div>}
+                    <button type="submit" className="btn btn-primary">
+                        {mode === "login" ? "Sign in" : "Sign up"}
+                    </button>
+                </form>
 
-            <p style={{ marginTop: 16 }}>
-                {mode === "login" ? "New here? " : "Already have an account? "}
-                <a
-                    href="#"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        setMode(mode === "login" ? "signup" : "login");
-                    }}
-                >
-                    {mode === "login" ? "Sign up" : "Log in"}
-                </a>
-            </p>
+                <div className="login-switch">
+                    {mode === "login" ? "No account? " : "Already have an account? "}
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setMode(mode === "login" ? "signup" : "login");
+                        }}
+                    >
+                        {mode === "login" ? "Sign up" : "Sign in"}
+                    </a>
+                </div>
+            </div>
         </div>
     );
 }

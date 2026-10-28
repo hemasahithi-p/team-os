@@ -172,4 +172,122 @@ router.patch("/:taskId", requireMember("admin", "member"), async (req: WsRequest
 
     res.json(result.rows[0]);
 });
+const depSchema = z.object({ dependsOnId: z.number().int() });
+
+// add dependency: "this task depends on dependsOnId" (member or admin)
+router.post("/:taskId/dependencies", requireMember("admin", "member"), async (req: WsRequest, res) => {
+    const taskId = Number(req.params.taskId);
+    const parsed = depSchema.safeParse(req.body);
+    if (!Number.isInteger(taskId) || !parsed.success) {
+        return res.status(400).json({ error: "Invalid input" });
+    }
+    const { dependsOnId } = parsed.data;
+
+    // check 1: not itself
+    if (taskId === dependsOnId) {
+        return res.status(400).json({ error: "A task cannot depend on itself" });
+    }
+
+    // check 2: both tasks are in this workspace
+    const found = await db.query(
+        "SELECT id FROM tasks WHERE workspace_id = $1 AND id = ANY($2::int[])",
+        [req.workspaceId, [taskId, dependsOnId]]
+    );
+    if (found.rows.length !== 2) {
+        return res.status(404).json({ error: "Task not found in this workspace" });
+    }
+
+    // check 3: no cycle. Does dependsOnId already (directly or indirectly) depend on taskId?
+    const cycle = await db.query(
+        `WITH RECURSIVE chain AS (
+       SELECT depends_on_id FROM task_dependencies WHERE task_id = $1
+       UNION
+       SELECT d.depends_on_id FROM task_dependencies d
+       JOIN chain c ON d.task_id = c.depends_on_id
+     )
+     SELECT 1 FROM chain WHERE depends_on_id = $2`,
+        [dependsOnId, taskId]
+    );
+    if (cycle.rows.length > 0) {
+        return res.status(409).json({ error: "This would create a circular dependency" });
+    }
+
+    try {
+        await db.query(
+            "INSERT INTO task_dependencies (task_id, depends_on_id) VALUES ($1, $2)",
+            [taskId, dependsOnId]
+        );
+    } catch (e: any) {
+        if (e.code === "23505") {
+            return res.status(409).json({ error: "Dependency already exists" });
+        }
+        console.error(e);
+        return res.status(500).json({ error: "Server error" });
+    }
+
+    await db.query(
+        `INSERT INTO audit_log (workspace_id, actor_type, actor_id, action, payload)
+     VALUES ($1, 'human', $2, 'task.dependency.add', $3)`,
+        [req.workspaceId, req.userId, JSON.stringify({ taskId, dependsOnId })]
+    );
+    res.status(201).json({ taskId, dependsOnId });
+});
+
+// see a task's dependencies (any member)
+router.get("/:taskId/dependencies", requireMember(), async (req: WsRequest, res) => {
+    const taskId = Number(req.params.taskId);
+    if (!Number.isInteger(taskId)) {
+        return res.status(400).json({ error: "Invalid task id" });
+    }
+
+    const task = await db.query(
+        "SELECT id FROM tasks WHERE id = $1 AND workspace_id = $2",
+        [taskId, req.workspaceId]
+    );
+    if (task.rows.length === 0) {
+        return res.status(404).json({ error: "Task not found in this workspace" });
+    }
+
+    // tasks this one is waiting on
+    const waitingOn = await db.query(
+        `SELECT t.id, t.title, t.status
+     FROM task_dependencies d JOIN tasks t ON t.id = d.depends_on_id
+     WHERE d.task_id = $1 AND t.workspace_id = $2`,
+        [taskId, req.workspaceId]
+    );
+    // tasks waiting on this one
+    const blocks = await db.query(
+        `SELECT t.id, t.title, t.status
+     FROM task_dependencies d JOIN tasks t ON t.id = d.task_id
+     WHERE d.depends_on_id = $1 AND t.workspace_id = $2`,
+        [taskId, req.workspaceId]
+    );
+    res.json({ waitingOn: waitingOn.rows, blocks: blocks.rows });
+});
+
+// remove a dependency (member or admin)
+router.delete("/:taskId/dependencies/:dependsOnId", requireMember("admin", "member"), async (req: WsRequest, res) => {
+    const taskId = Number(req.params.taskId);
+    const dependsOnId = Number(req.params.dependsOnId);
+    if (!Number.isInteger(taskId) || !Number.isInteger(dependsOnId)) {
+        return res.status(400).json({ error: "Invalid id" });
+    }
+
+    const result = await db.query(
+        `DELETE FROM task_dependencies
+     WHERE task_id = $1 AND depends_on_id = $2
+       AND task_id IN (SELECT id FROM tasks WHERE workspace_id = $3)`,
+        [taskId, dependsOnId, req.workspaceId]
+    );
+    if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Dependency not found" });
+    }
+
+    await db.query(
+        `INSERT INTO audit_log (workspace_id, actor_type, actor_id, action, payload)
+     VALUES ($1, 'human', $2, 'task.dependency.remove', $3)`,
+        [req.workspaceId, req.userId, JSON.stringify({ taskId, dependsOnId })]
+    );
+    res.status(204).send();
+});
 export default router;

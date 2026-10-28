@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { api } from "./api";
 import { initials, avatarColor, today } from "./ui";
 import TaskPanel from "./TaskPanel";
+import { onRealtime } from "./realtime";
 
 export type Task = {
     id: number;
@@ -68,6 +69,14 @@ export default function Board({
             .then(setMembers)
             .catch((e) => setError(e.message));
     }, [workspaceId]);
+
+    // live updates from teammates
+    useEffect(() => {
+        return onRealtime((ev) => {
+            if (ev.type === "subscribed") loadTasks(); // first connect or reconnect: catch up
+            if (ev.type === "tasks.changed" && ev.projectId === projectId) loadTasks();
+        });
+    }, [workspaceId, projectId]);
 
     async function addTask(e: FormEvent) {
         e.preventDefault();

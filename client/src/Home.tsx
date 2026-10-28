@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { api } from "./api";
 import Board from "./Board";
 import { initials, avatarColor } from "./ui";
+import { connectWorkspace, disconnect } from "./realtime";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -41,6 +42,14 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
             })
             .catch((e) => setError(e.message));
     }, [wsId]);
+
+    // keep one live connection to the selected workspace
+    useEffect(() => {
+        if (wsId !== null) connectWorkspace(wsId);
+    }, [wsId]);
+
+    // close it when leaving (logout)
+    useEffect(() => () => disconnect(), []);
 
     async function createWorkspace(e: FormEvent) {
         e.preventDefault();

@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { api } from "./api";
 import { initials, avatarColor } from "./ui";
 import type { Task } from "./Board";
+import { onRealtime } from "./realtime";
 
 type Comment = {
     id: number;
@@ -59,6 +60,17 @@ export default function TaskPanel({
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
 
+    // new comments from teammates appear live
+    useEffect(() => {
+        return onRealtime((ev) => {
+            if (ev.type === "comment.created" && ev.taskId === task.id) {
+                setComments((list) =>
+                    list.some((c) => c.id === ev.comment.id) ? list : [...list, ev.comment]
+                );
+            }
+        });
+    }, [task.id]);
+
     async function send(e: FormEvent) {
         e.preventDefault();
         if (!text.trim()) return;
@@ -67,7 +79,9 @@ export default function TaskPanel({
                 `/workspaces/${workspaceId}/tasks/${task.id}/comments`,
                 { method: "POST", body: { body: text.trim() } }
             );
-            setComments((list) => [...list, created]);
+            setComments((list) =>
+                list.some((c) => c.id === created.id) ? list : [...list, created]
+            );
             setText("");
             setError("");
         } catch (err: any) {

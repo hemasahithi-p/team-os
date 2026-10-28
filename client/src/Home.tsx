@@ -158,7 +158,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                 {workspace && project && (
                     <>
                         <h1 style={{ marginTop: 0 }}>{project.name}</h1>
-                        <Board workspaceId={workspace.id} projectId={project.id} />
+                        <Board workspaceId={workspace.id} projectId={project.id} canEdit={canEdit} />
                     </>
                 )}
             </main>

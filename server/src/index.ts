@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth";
 import workspaceRoutes from "./routes/workspaces";
 import projectRoutes from "./routes/projects";
 import taskRoutes from "./routes/tasks";
+import commentRoutes from "./routes/comments";
 
 const app = express();
 app.use(cors());
@@ -19,5 +20,6 @@ app.use("/auth", authRoutes);
 app.use("/workspaces", workspaceRoutes);
 app.use("/workspaces/:workspaceId/projects", projectRoutes);
 app.use("/workspaces/:workspaceId/tasks", taskRoutes);
+app.use("/workspaces/:workspaceId/tasks/:taskId/comments", commentRoutes);
 
 app.listen(process.env.PORT, () => console.log("API on", process.env.PORT));

@@ -1085,3 +1085,71 @@ select {
 .panel-meta .input {
   height: 28px;
 }
+
+/* ---------- search ---------- */
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.search-wrap .search {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.search-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40px;
+  z-index: 21;
+  background: #fff;
+  color: var(--text);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.result:hover {
+  background: var(--purple-light);
+}
+
+.result-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-extra {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meeting-row {
+  cursor: pointer;
+}
+
+.meeting-row:hover {
+  background: #fafafa;
+}

@@ -7,6 +7,8 @@ import { connectWorkspace, disconnect, onRealtime } from "./realtime";
 import Bell from "./Bell";
 import Calendar from "./Calendar";
 import Members from "./Members";
+import Search from "./Search";
+import Meetings from "./Meetings";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -20,7 +22,21 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     const [newWs, setNewWs] = useState("");
     const [newProject, setNewProject] = useState("");
     const [error, setError] = useState("");
-    const [view, setView] = useState<"board" | "calendar" | "members">("board");
+    const [view, setView] = useState<"board" | "calendar" | "members" | "meetings">("board");
+    const [focusTask, setFocusTask] = useState<{ id: number; n: number } | null>(null);
+    const [focusMeeting, setFocusMeeting] = useState<{ id: number; n: number } | null>(null);
+
+    // a search result was clicked
+    function openResult(r: { kind: "task" | "meeting"; id: number; project_id: number | null }) {
+        if (r.kind === "task") {
+            if (r.project_id) setProjectId(r.project_id);
+            setView("board");
+            setFocusTask({ id: r.id, n: Date.now() });
+        } else {
+            setView("meetings");
+            setFocusMeeting({ id: r.id, n: Date.now() });
+        }
+    }
 
     const workspace = workspaces.find((w) => w.id === wsId);
     const project = projects.find((p) => p.id === projectId);
@@ -102,7 +118,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                     <span className="brand-logo">T</span>
                     Team OS
                 </div>
-                <input className="search" placeholder="Search (AI search coming soon)" disabled />
+                <Search workspaceId={wsId} onPick={openResult} />
                 <div className="topbar-right">
                     <Bell workspaceId={wsId} />
                     <span className="user-name">{user.name}</span>
@@ -174,6 +190,9 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                             <button className={"tab" + (view === "members" ? " active" : "")} onClick={() => setView("members")}>
                                 Members
                             </button>
+                            <button className={"tab" + (view === "meetings" ? " active" : "")} onClick={() => setView("meetings")}>
+                                Meetings
+                            </button>
                         </div>
                     )}
 
@@ -187,7 +206,13 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                                 <h1>{project.name}</h1>
                                 <span className="chip">{workspace.role}</span>
                             </div>
-                            <Board workspaceId={workspace.id} projectId={project.id} canEdit={canEdit} />
+                            <Board
+                                workspaceId={workspace.id}
+                                projectId={project.id}
+                                canEdit={canEdit}
+                                focus={focusTask}
+                                onFocusDone={() => setFocusTask(null)}
+                            />
                         </>
                     )}
 
@@ -216,6 +241,20 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                                 workspaceId={workspace.id}
                                 currentUserId={user.id}
                                 isAdmin={workspace.role === "admin"}
+                            />
+                        </>
+                    )}
+                    {workspace && view === "meetings" && (
+                        <>
+                            <div className="page-head">
+                                <h1>{workspace.name} meetings</h1>
+                                <span className="chip">{workspace.role}</span>
+                            </div>
+                            <Meetings
+                                workspaceId={workspace.id}
+                                canEdit={canEdit}
+                                focus={focusMeeting}
+                                onFocusDone={() => setFocusMeeting(null)}
                             />
                         </>
                     )}

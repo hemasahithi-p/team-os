@@ -33,10 +33,14 @@ export default function Board({
     workspaceId,
     projectId,
     canEdit,
+    focus,
+    onFocusDone,
 }: {
     workspaceId: number;
     projectId: number;
     canEdit: boolean;
+    focus?: { id: number; n: number } | null;
+    onFocusDone?: () => void;
 }) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
@@ -76,6 +80,13 @@ export default function Board({
         setOpenId(null);
         loadTasks();
     }, [workspaceId, projectId]);
+    // opened from the search bar
+    useEffect(() => {
+        if (focus) {
+            setOpenId(focus.id);
+            onFocusDone?.();
+        }
+    }, [focus, projectId]);
 
     function loadMembers() {
         api<Member[]>(`/workspaces/${workspaceId}/members`)

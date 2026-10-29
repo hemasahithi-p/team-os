@@ -12,6 +12,8 @@ import notificationRoutes from "./routes/notifications";
 import eventRoutes from "./routes/events";
 import aiRoutes from "./routes/ai";
 import riskRoutes from "./routes/risks";
+import searchRoutes from "./routes/search";
+import meetingRoutes from "./routes/meetings";
 
 const app = express();
 app.use(cors());
@@ -31,6 +33,8 @@ app.use("/workspaces/:workspaceId/notifications", notificationRoutes);
 app.use("/workspaces/:workspaceId/events", eventRoutes);
 app.use("/workspaces/:workspaceId/ai", aiRoutes);
 app.use("/workspaces/:workspaceId/risks", riskRoutes);
+app.use("/workspaces/:workspaceId/search", searchRoutes);
+app.use("/workspaces/:workspaceId/meetings", meetingRoutes);
 
 const server = http.createServer(app);
 initRealtime(server);

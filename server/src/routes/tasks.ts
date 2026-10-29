@@ -182,6 +182,13 @@ router.patch("/:taskId", requireMember("admin", "member"), async (req: WsRequest
      VALUES ($1, 'human', $2, 'task.update', $3)`,
         [req.workspaceId, req.userId, JSON.stringify({ taskId, changes })]
     );
+    // text changed: clear the vector so the next search re-embeds it
+    if (changes.title !== undefined || changes.description !== undefined) {
+        await db.query("UPDATE tasks SET embedding = NULL WHERE id = $1 AND workspace_id = $2", [
+            taskId,
+            req.workspaceId,
+        ]);
+    }
     if (changes.status === "blocked") {
         const down = await downstreamOf(req.workspaceId!, taskId);
         const perUser = new Map<number, number>();

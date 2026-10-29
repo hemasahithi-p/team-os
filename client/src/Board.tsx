@@ -4,6 +4,7 @@ import { api } from "./api";
 import { initials, avatarColor, today } from "./ui";
 import TaskPanel from "./TaskPanel";
 import { onRealtime } from "./realtime";
+import AiPlan from "./AiPlan";
 
 export type Task = {
     id: number;
@@ -47,6 +48,8 @@ export default function Board({
 
     const [openId, setOpenId] = useState<number | null>(null);
     const openTask = tasks.find((t) => t.id === openId);
+
+    const [aiOpen, setAiOpen] = useState(false);
 
     async function loadTasks() {
         try {
@@ -148,6 +151,7 @@ export default function Board({
                         ))}
                     </select>
                     <input className="input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                    <button type="button" className="btn" onClick={() => setAiOpen(true)}>✨ AI plan</button>
                     <button type="submit" className="btn btn-primary">Add task</button>
                 </form>
             )}
@@ -232,6 +236,18 @@ export default function Board({
                     task={openTask}
                     canEdit={canEdit}
                     onClose={() => setOpenId(null)}
+                />
+            )}
+            {aiOpen && (
+                <AiPlan
+                    workspaceId={workspaceId}
+                    projectId={projectId}
+                    members={members}
+                    onClose={() => setAiOpen(false)}
+                    onApplied={() => {
+                        setAiOpen(false);
+                        loadTasks();
+                    }}
                 />
             )}
         </div>

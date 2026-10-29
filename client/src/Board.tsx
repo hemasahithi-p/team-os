@@ -5,6 +5,9 @@ import { initials, avatarColor, today } from "./ui";
 import TaskPanel from "./TaskPanel";
 import { onRealtime } from "./realtime";
 import AiPlan from "./AiPlan";
+import RiskBadge from "./RiskBadge";
+import RiskReport from "./RiskReport";
+import type { RiskItem } from "./risk";
 
 export type Task = {
     id: number;
@@ -51,10 +54,17 @@ export default function Board({
 
     const [aiOpen, setAiOpen] = useState(false);
 
+    const [risks, setRisks] = useState<Record<number, RiskItem>>({});
+    const [reportOpen, setReportOpen] = useState(false);
+
     async function loadTasks() {
         try {
-            const list = await api<Task[]>(`/workspaces/${workspaceId}/tasks?projectId=${projectId}`);
+            const [list, risk] = await Promise.all([
+                api<Task[]>(`/workspaces/${workspaceId}/tasks?projectId=${projectId}`),
+                api<{ items: RiskItem[] }>(`/workspaces/${workspaceId}/risks?projectId=${projectId}`),
+            ]);
             setTasks(list);
+            setRisks(Object.fromEntries(risk.items.map((i) => [i.id, i])));
             setError("");
         } catch (e: any) {
             setError(e.message);
@@ -131,9 +141,23 @@ export default function Board({
     }
 
     const todayStr = today();
+    const riskList = Object.values(risks);
+    const riskCount = {
+        blocked: riskList.filter((r) => r.own === "blocked").length,
+        overdue: riskList.filter((r) => r.own === "overdue").length,
+        atRisk: riskList.filter((r) => !r.own && r.reasons.length > 0).length,
+    };
 
     return (
         <div>
+            <div className="board-bar">
+                <span className="risk-counts">
+                    {riskCount.blocked + riskCount.overdue + riskCount.atRisk === 0
+                        ? "✅ No risks detected"
+                        : `⛔ ${riskCount.blocked} blocked · ⏰ ${riskCount.overdue} overdue · ⚠ ${riskCount.atRisk} at risk`}
+                </span>
+                <button className="btn" onClick={() => setReportOpen(true)}>🧠 Risk report</button>
+            </div>
             {canEdit && (
                 <form className="task-form" onSubmit={addTask}>
                     <input
@@ -204,6 +228,7 @@ export default function Board({
                                         }}
                                     >
                                         <div className="card-title">{t.title}</div>
+                                        <RiskBadge r={risks[t.id]} />
                                         <div className="card-foot">
                                             <div className="assignee">
                                                 {t.assignee_name ? (
@@ -248,6 +273,14 @@ export default function Board({
                         setAiOpen(false);
                         loadTasks();
                     }}
+                />
+            )}
+            {reportOpen && (
+                <RiskReport
+                    workspaceId={workspaceId}
+                    projectId={projectId}
+                    canUseAi={canEdit}
+                    onClose={() => setReportOpen(false)}
                 />
             )}
         </div>

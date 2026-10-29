@@ -11,6 +11,7 @@ import { initRealtime } from "./realtime";
 import notificationRoutes from "./routes/notifications";
 import eventRoutes from "./routes/events";
 import aiRoutes from "./routes/ai";
+import riskRoutes from "./routes/risks";
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,7 @@ app.use("/workspaces/:workspaceId/tasks/:taskId/comments", commentRoutes);
 app.use("/workspaces/:workspaceId/notifications", notificationRoutes);
 app.use("/workspaces/:workspaceId/events", eventRoutes);
 app.use("/workspaces/:workspaceId/ai", aiRoutes);
+app.use("/workspaces/:workspaceId/risks", riskRoutes);
 
 const server = http.createServer(app);
 initRealtime(server);

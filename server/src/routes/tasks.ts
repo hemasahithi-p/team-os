@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireMember, WsRequest } from "../middleware/workspace";
 import { broadcast } from "../realtime";
 import { notify, userName } from "../notify";
+import { downstreamOf } from "../risk";
 
 const router = Router({ mergeParams: true });
 
@@ -181,6 +182,24 @@ router.patch("/:taskId", requireMember("admin", "member"), async (req: WsRequest
      VALUES ($1, 'human', $2, 'task.update', $3)`,
         [req.workspaceId, req.userId, JSON.stringify({ taskId, changes })]
     );
+    if (changes.status === "blocked") {
+        const down = await downstreamOf(req.workspaceId!, taskId);
+        const perUser = new Map<number, number>();
+        for (const d of down) {
+            if (d.assignee_id && d.assignee_id !== req.userId) {
+                perUser.set(d.assignee_id, (perUser.get(d.assignee_id) ?? 0) + 1);
+            }
+        }
+        for (const [uid, n] of perUser) {
+            await notify(
+                req.workspaceId!,
+                uid,
+                "risk.blocked",
+                `"${result.rows[0].title}" is blocked and may delay ${n} of your task${n > 1 ? "s" : ""}`,
+                taskId
+            );
+        }
+    }
     const oldAssignee = task.rows[0].assignee_id;
     if (changes.assigneeId && changes.assigneeId !== oldAssignee && changes.assigneeId !== req.userId) {
         await notify(
@@ -257,6 +276,7 @@ router.post("/:taskId/dependencies", requireMember("admin", "member"), async (re
      VALUES ($1, 'human', $2, 'task.dependency.add', $3)`,
         [req.workspaceId, req.userId, JSON.stringify({ taskId, dependsOnId })]
     );
+    broadcast(req.workspaceId!, { type: "tasks.changed", projectId: null, actorId: req.userId });
     res.status(201).json({ taskId, dependsOnId });
 });
 
@@ -315,6 +335,7 @@ router.delete("/:taskId/dependencies/:dependsOnId", requireMember("admin", "memb
      VALUES ($1, 'human', $2, 'task.dependency.remove', $3)`,
         [req.workspaceId, req.userId, JSON.stringify({ taskId, dependsOnId })]
     );
+    broadcast(req.workspaceId!, { type: "tasks.changed", projectId: null, actorId: req.userId });
     res.status(204).send();
 });
 export default router;

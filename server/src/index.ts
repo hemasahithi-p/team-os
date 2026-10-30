@@ -14,6 +14,8 @@ import aiRoutes from "./routes/ai";
 import riskRoutes from "./routes/risks";
 import searchRoutes from "./routes/search";
 import meetingRoutes from "./routes/meetings";
+import agentRoutes from "./routes/agent";
+import auditRoutes from "./routes/audit";
 
 const app = express();
 app.use(cors());
@@ -35,6 +37,8 @@ app.use("/workspaces/:workspaceId/ai", aiRoutes);
 app.use("/workspaces/:workspaceId/risks", riskRoutes);
 app.use("/workspaces/:workspaceId/search", searchRoutes);
 app.use("/workspaces/:workspaceId/meetings", meetingRoutes);
+app.use("/workspaces/:workspaceId/agent", agentRoutes);
+app.use("/workspaces/:workspaceId/audit", auditRoutes);
 
 const server = http.createServer(app);
 initRealtime(server);

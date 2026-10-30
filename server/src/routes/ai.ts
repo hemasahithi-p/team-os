@@ -14,7 +14,7 @@ router.use(requireAuth);
 
 // ---------- protect the free quota: 10 AI calls per user per hour ----------
 const hits = new Map<number, number[]>();
-function allowed(userId: number) {
+export function allowed(userId: number) {
     const now = Date.now();
     const recent = (hits.get(userId) ?? []).filter((t) => now - t < 3_600_000);
     if (recent.length >= 10) {
@@ -27,7 +27,7 @@ function allowed(userId: number) {
 }
 
 // today + N days as YYYY-MM-DD (the model never does date math)
-function toDate(days: number) {
+export function toDate(days: number) {
     const d = new Date();
     d.setDate(d.getDate() + days);
     return d.toLocaleDateString("en-CA");

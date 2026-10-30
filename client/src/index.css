@@ -1153,3 +1153,54 @@ select {
 .meeting-row:hover {
   background: #fafafa;
 }
+
+/* ---------- agent ---------- */
+.agent-banner {
+  background: var(--purple-light);
+  color: var(--purple-dark);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+
+.action-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--purple);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.action-title {
+  font-weight: 600;
+}
+
+.action-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.chip.status-approved {
+  background: #dff6dd;
+  color: #237b4b;
+}
+
+.chip.status-rejected {
+  background: #eee;
+  color: var(--muted);
+}
+
+.chip.status-stale {
+  background: #fff4ce;
+  color: #8a5a00;
+}

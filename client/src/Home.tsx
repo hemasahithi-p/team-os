@@ -9,6 +9,8 @@ import Calendar from "./Calendar";
 import Members from "./Members";
 import Search from "./Search";
 import Meetings from "./Meetings";
+import Agent from "./Agent";
+import Activity from "./Activity";
 
 type User = { id: number; name: string; email: string };
 type Workspace = { id: number; name: string; role: string };
@@ -22,7 +24,7 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
     const [newWs, setNewWs] = useState("");
     const [newProject, setNewProject] = useState("");
     const [error, setError] = useState("");
-    const [view, setView] = useState<"board" | "calendar" | "members" | "meetings">("board");
+    const [view, setView] = useState<"board" | "calendar" | "members" | "meetings" | "agent" | "activity">("board");
     const [focusTask, setFocusTask] = useState<{ id: number; n: number } | null>(null);
     const [focusMeeting, setFocusMeeting] = useState<{ id: number; n: number } | null>(null);
 
@@ -193,6 +195,14 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                             <button className={"tab" + (view === "meetings" ? " active" : "")} onClick={() => setView("meetings")}>
                                 Meetings
                             </button>
+                            <button className={"tab" + (view === "agent" ? " active" : "")} onClick={() => setView("agent")}>
+                                🤖 Agent
+                            </button>
+                            {workspace.role === "admin" && (
+                                <button className={"tab" + (view === "activity" ? " active" : "")} onClick={() => setView("activity")}>
+                                    Activity
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -256,6 +266,25 @@ export default function Home({ user, onLogout }: { user: User; onLogout: () => v
                                 focus={focusMeeting}
                                 onFocusDone={() => setFocusMeeting(null)}
                             />
+                        </>
+                    )}
+                    {workspace && view === "agent" && (
+                        <>
+                            <div className="page-head">
+                                <h1>{workspace.name} agent</h1>
+                                <span className="chip">{workspace.role}</span>
+                            </div>
+                            <Agent workspaceId={workspace.id} isAdmin={workspace.role === "admin"} canEdit={canEdit} />
+                        </>
+                    )}
+
+                    {workspace && view === "activity" && workspace.role === "admin" && (
+                        <>
+                            <div className="page-head">
+                                <h1>{workspace.name} activity</h1>
+                                <span className="chip">admin only</span>
+                            </div>
+                            <Activity workspaceId={workspace.id} />
                         </>
                     )}
                 </main>
